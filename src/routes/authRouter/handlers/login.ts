@@ -1,41 +1,31 @@
-import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { getDbConnection } from '../../../db';
+import { generateToken, verifyPassword } from '../../../utils/auth';
 import { DATABASE_NAME } from '../../../utils/constants';
 
 const logInHandler = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const db = getDbConnection(DATABASE_NAME);
-  const user = await db.collection('users').findOne({ email });
+    const db = getDbConnection(DATABASE_NAME);
+    const user = await db.collection('users').findOne({ email });
 
-  if (!user) {
-    return res.sendStatus(401).json({ message: 'No user found!' });
-  }
+    if (!user) {
+      return res.status(401).json({ message: 'No user found!' });
+    }
 
-  const { _id: id, isVerified, passwordHash, info } = user;
+    const { _id: id, isVerified, passwordHash, info } = user;
 
-  const isCorrect = await bcrypt.compare(password, passwordHash);
+    const isCorrect = await verifyPassword(password, passwordHash);
 
-  if (isCorrect) {
-    jwt.sign(
-      { id, isVerified, email, info },
-      process.env.JWT_SECRET || '',
-      { expiresIn: '2d' },
-      (err, token) => {
-        if (err) {
-          console.log(err);
-          res.sendStatus(500);
-        }
-
-        console.log('[ServerToken]', token);
-
-        res.status(200).send({ token });
-      }
-    );
-  } else {
-    res.sendStatus(401).json({ message: 'Could not log you in!' });
+    if (isCorrect) {
+      const token = await generateToken({ id, isVerified, email, info });
+      return res.status(200).send({ token });
+    } else {
+      res.status(401).json({ message: 'Could not log you in!' });
+    }
+  } catch (e) {
+    console.error(e);
   }
 };
 
