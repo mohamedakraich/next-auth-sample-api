@@ -1,37 +1,33 @@
 import { ObjectId } from 'mongodb';
-import jwt from 'jsonwebtoken';
 import { getDbConnection } from '../../../db';
 import { Request, Response } from 'express';
 import { DATABASE_NAME } from '../../../utils/constants';
+import { generateToken } from '../../../utils/auth';
 
 const verifyEmailHandler = async (req: Request, res: Response) => {
-  const { verificationString } = req.body;
-  console.log(verificationString);
+  try {
+    const { verificationString } = req.body;
 
-  const db = getDbConnection(DATABASE_NAME);
-  const result = await db.collection('users').findOne({ verificationString });
+    const db = getDbConnection(DATABASE_NAME);
 
-  console.log(result);
+    const existingUserWithVerifyStr = await db
+      .collection('users')
+      .findOne({ verificationString });
 
-  if (!result) return res.sendStatus(401);
+    if (!existingUserWithVerifyStr) return res.status(401).end();
 
-  const { _id: id, email, info } = result;
+    const { _id: id, email, info } = existingUserWithVerifyStr;
 
-  await db
-    .collection('users')
-    .updateOne({ _id: new ObjectId(id) }, { $set: { isVerified: true } });
+    await db
+      .collection('users')
+      .updateOne({ _id: new ObjectId(id) }, { $set: { isVerified: true } });
 
-  jwt.sign(
-    { id, email, isVerified: true, info },
-    process.env.JWT_SECRET || '',
-    { expiresIn: '2d' },
-    (err, token) => {
-      if (err) {
-        return res.sendStatus(500);
-      }
+    const token = await generateToken({ id, email, isVerified: true, info });
 
-      res.status(200).json({ token });
-    }
-  );
+    return res.status(200).json({ token });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).end();
+  }
 };
 export default verifyEmailHandler;
