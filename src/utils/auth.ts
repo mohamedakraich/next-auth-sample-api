@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 import { compare, hash } from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
 import { UserType } from '../routes/authRouter/handlers/signUp';
+import { getDbConnection } from '../db';
+import { DATABASE_NAME } from './constants';
+import { JwtType } from '../types/JwtType';
 
 export const generateToken = (user: UserType) =>
   new Promise((resolve, reject) => {
@@ -42,29 +45,33 @@ export const protect = async (
   res: Response,
   next: NextFunction
 ) => {
-  const bearer = req.headers.authorization;
-
-  if (!bearer || !bearer.startsWith('Bearer ')) {
-    return res.status(401).end();
-  }
-
-  const token = bearer.split('Bearer ')[1].trim();
-  let payload;
   try {
-    payload = await verifyToken(token);
+    const bearer = req.headers.authorization;
+    //console.log(bearer);
+    if (!bearer || !bearer.startsWith('Bearer ')) {
+      return res.status(401).end();
+    }
+    const token = bearer.split('Bearer ')[1].trim();
+    const payload = (await verifyToken(token)) as JwtType;
+
+    const db = getDbConnection(DATABASE_NAME);
+
+    const user = await db.collection('users').findOne({
+      email: payload.email,
+    });
+
+    console.log(user);
+
+    if (!user) {
+      return res.status(401).end();
+    }
+
+    const authenticatedUser = { ...payload };
+
+    req.currentUser = authenticatedUser;
+
+    next();
   } catch (e) {
-    return res.status(401).end();
+    console.error(e);
   }
-
-  /*const user = await User.findById(payload.id)
-    .select('-password')
-    .lean()
-    .exec();
-
-  if (!user) {
-    return res.status(401).end();
-  }
-
-  req.user = user;*/
-  next();
 };
