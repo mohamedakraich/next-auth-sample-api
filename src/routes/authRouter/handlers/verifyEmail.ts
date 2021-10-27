@@ -22,7 +22,7 @@ const verifyEmailHandler = async (req: Request, res: Response) => {
       .collection('users')
       .updateOne({ _id: new ObjectId(id) }, { $set: { isVerified: true } });
 
-    const token = await generateToken({ id, email, isVerified: true, info });
+    const token = await generateToken({ id, email, isVerified: true });
 
     return res.status(200).json({ token });
   } catch (e) {

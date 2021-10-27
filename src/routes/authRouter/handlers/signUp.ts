@@ -9,17 +9,10 @@ import {
 } from '../../../utils/constants';
 import { sendEmail } from '../../../utils/sendEmail';
 
-export interface StartingInfo {
-  hairColor: string;
-  favoriteFood: string;
-  bio: string;
-}
-
 export interface UserType {
   id: string;
-  isVerified: boolean;
   email: string;
-  info: StartingInfo;
+  isVerified: boolean;
 }
 
 const signUpHandler = async (req: Request, res: Response) => {
@@ -37,17 +30,10 @@ const signUpHandler = async (req: Request, res: Response) => {
 
     const verificationString = uuid();
 
-    const startingInfo = {
-      hairColor: '',
-      favoriteFood: '',
-      bio: '',
-    };
-
     const result = await db.collection('users').insertOne({
       email,
       isVerified: false,
       passwordHash,
-      info: startingInfo,
       verificationString,
     });
 
@@ -67,7 +53,6 @@ const signUpHandler = async (req: Request, res: Response) => {
       id: insertedId.toString(),
       isVerified: false,
       email,
-      info: startingInfo,
     });
 
     return res.status(200).send({ token });

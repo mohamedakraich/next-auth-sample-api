@@ -14,12 +14,12 @@ const logInHandler = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'No user found!' });
     }
 
-    const { _id: id, isVerified, passwordHash, info } = user;
+    const { _id: id, isVerified, passwordHash } = user;
 
     const isCorrect = await verifyPassword(password, passwordHash);
 
     if (isCorrect) {
-      const token = await generateToken({ id, isVerified, email, info });
+      const token = await generateToken({ id, isVerified, email });
       return res.status(200).send({ token });
     } else {
       res.status(401).json({ message: 'Could not log you in!' });

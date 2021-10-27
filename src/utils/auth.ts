@@ -4,7 +4,12 @@ import { NextFunction, Request, Response } from 'express';
 import { UserType } from '../routes/authRouter/handlers/signUp';
 import { getDbConnection } from '../db';
 import { DATABASE_NAME } from './constants';
-import { JwtType } from '../types/JwtType';
+
+export interface JwtType {
+  id: string;
+  email: string;
+  isVerified: boolean;
+}
 
 export const generateToken = (user: UserType) =>
   new Promise((resolve, reject) => {
