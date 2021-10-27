@@ -11,7 +11,7 @@ const logInHandler = async (req: Request, res: Response) => {
   const user = await db.collection('users').findOne({ email });
 
   if (!user) {
-    return res.sendStatus(401);
+    return res.sendStatus(401).json({ message: 'No user found!' });
   }
 
   const { _id: id, isVerified, passwordHash, info } = user;
@@ -29,11 +29,13 @@ const logInHandler = async (req: Request, res: Response) => {
           res.sendStatus(500);
         }
 
+        console.log('[ServerToken]', token);
+
         res.status(200).send({ token });
       }
     );
   } else {
-    res.sendStatus(401);
+    res.sendStatus(401).json({ message: 'Could not log you in!' });
   }
 };
 

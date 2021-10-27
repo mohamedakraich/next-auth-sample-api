@@ -1,4 +1,5 @@
 import express from 'express';
+import changePasswordHandler from './handlers/changePassword';
 import forgotPasswordHandler from './handlers/forgotPassword';
 import logInHandler from './handlers/login';
 import resetPasswordHandler from './handlers/resetPassword';
@@ -20,5 +21,6 @@ router.put(
   '/api/users/:passwordResetCode/reset-password',
   resetPasswordHandler
 );
+router.put('/api/users/change-password', changePasswordHandler);
 
 export default router;
